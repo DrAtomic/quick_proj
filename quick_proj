@@ -4,7 +4,7 @@ set -xe
 
 proj_dir=~/Projects
 
-if [[ "$1" == "gui" ]]
+if [ -d "$proj_dir/quick_proj/$1" ]
 then
     if [ -d  "$proj_dir/$2" ]
     then
@@ -12,7 +12,7 @@ then
 	exit
     fi
     mkdir $proj_dir/$2
-    cp -r $proj_dir/quick_proj/gui/* $proj_dir/$2
+    cp -r $proj_dir/quick_proj/$1/* $proj_dir/$2
     pushd $proj_dir/$2
     sed -i "s/app_name/${2}/g" Makefile
     mv {,.}gitignore
