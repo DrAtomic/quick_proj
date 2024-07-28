@@ -16,7 +16,7 @@ LINK_OPTS = -Wl,-rpath=/usr/local/lib/
 all: $(APP)
 imgui.o: imgui.cpp
 	g++ -c $(CXXFLAGS) $(INCLUDE_PATHS) imgui.cpp -o imgui.o
-$(APP): main.cpp imgui.o
+$(APP): main.cpp backend_abstraction.cpp imgui.o
 	g++ $(CXXFLAGS) $(INCLUDE_PATHS) $(SOURCES) -o $(APP) $(LIBS) $(LINK_OPTS) imgui.o
 clean:
 	rm $(APP) *.o
