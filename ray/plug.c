@@ -24,11 +24,11 @@ void plug_post_reload(Plug *plug)
 	(void)plug;
 }
 
-void plug_update(Plug *plug)
+static void mouse_stuff(Plug *plug, Vector2 *mouse_position, Vector2 *mouse_world_pos)
 {
-	Vector2 mouse_position = GetMousePosition();
-	Vector2 mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), plug->camera);
-	if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+	*mouse_position = GetMousePosition();
+	*mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), plug->camera);
+	if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
 		Vector2 delta = GetMouseDelta();
 		delta = Vector2Scale(delta, -1.0f / plug->camera.zoom);
 		plug->camera.target = Vector2Add(plug->camera.target, delta);
@@ -36,14 +36,21 @@ void plug_update(Plug *plug)
 
 	float wheel = GetMouseWheelMove();
 	if (wheel != 0) {
-		plug->camera.offset = mouse_position;
-		plug->camera.target = mouse_world_pos;
+		plug->camera.offset = *mouse_position;
+		plug->camera.target = *mouse_world_pos;
 
 		float scale_factor = 1.0f + (0.25f * fabsf(wheel));
 		if (wheel < 0)
 			scale_factor = 1.0f / scale_factor;
 		plug->camera.zoom = Clamp(plug->camera.zoom * scale_factor, 0.125f, 64.0f);
 	}
+}
+
+void plug_update(Plug *plug)
+{
+	Vector2 mouse_position = GetMousePosition();
+	Vector2 mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), plug->camera);
+	mouse_stuff(plug, &mouse_position, &mouse_world_pos);
 
 	BeginDrawing();
 	{
