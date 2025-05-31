@@ -11,9 +11,9 @@ then
 	echo "project already exists"
 	exit
     fi
-    mkdir $proj_dir/$2
-    cp -r $proj_dir/quick_proj/$1/* $proj_dir/$2
-    pushd $proj_dir/$2
+    mkdir $proj_dir/"$2"
+    cp -r $proj_dir/quick_proj/"$1"/* $proj_dir/"$2"
+    pushd $proj_dir/"$2"
     sed -i "s/app_name/${2}/g" Makefile
     mv {,.}gitignore
     sed -i "s/app_name/${2}/g" .gitignore
