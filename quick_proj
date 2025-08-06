@@ -11,7 +11,8 @@ usage() {
 	exit 1
 }
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 2 ]
+then
 	usage
 fi
 
@@ -28,11 +29,18 @@ then
     sed -i "s/app_name/${2}/g" Makefile
     mv {,.}gitignore
     sed -i "s/app_name/${2}/g" .gitignore
+
     if [ $1 == "fpga" ]
     then
 	mv app_name.vhd $2.vhd
 	sed -i "s/app_name/${2}/g" $2.vhd
     fi
+
+    if [ $1 == "ray" ]
+    then
+	sed -i "s/App Name/${2}/g" main.c
+    fi
+
     popd
 else
     echo "failed to make project"
