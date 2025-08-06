@@ -1,10 +1,21 @@
 #!/bin/bash
 
-set -xe
+set -e
 
 proj_dir=~/Projects
 
-if [ -d "$proj_dir/quick_proj/$1" ]
+usage() {
+	echo "Usage: $(basename "$0") [project-kind] [project-name]" >&2
+	echo "project-kinds:            "
+	echo "$(ls ~/Projects/quick_proj/project_kinds)"
+	exit 1
+}
+
+if [ "$#" -ne 2 ]; then
+	usage
+fi
+
+if [ -d "$proj_dir/quick_proj/project_kinds/$1" ]
 then
     if [ -d  "$proj_dir/$2" ]
     then
@@ -12,11 +23,16 @@ then
 	exit
     fi
     mkdir $proj_dir/"$2"
-    cp -r $proj_dir/quick_proj/"$1"/* $proj_dir/"$2"
+    cp -r $proj_dir/quick_proj/project_kinds/"$1"/* $proj_dir/"$2"
     pushd $proj_dir/"$2"
     sed -i "s/app_name/${2}/g" Makefile
     mv {,.}gitignore
     sed -i "s/app_name/${2}/g" .gitignore
+    if [ $1 == "fpga" ]
+    then
+	mv app_name.vhd $2.vhd
+	sed -i "s/app_name/${2}/g" $2.vhd
+    fi
     popd
 else
     echo "failed to make project"

@@ -19,7 +19,7 @@ plug_post_reload_t plug_post_reload;
 
 Plug plug;
 
-void libplug_reload(void)
+static void libplug_reload(void)
 {
 	if (libplug)
 		dlclose(libplug);
@@ -58,7 +58,7 @@ void libplug_reload(void)
 	printf("reloading!\n");
 }
 
-int plug_should_reload(time_t *last_modified_time)
+static int plug_should_reload(time_t *last_modified_time)
 {
 	int ret = 0;
 	struct stat attr;
@@ -84,7 +84,7 @@ int main(void)
 	plug_should_reload(&last_modified_time);
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_ALWAYS_RUN);
-	InitWindow(factor*16, factor*9, "balancer");
+	InitWindow(factor*16, factor*9, "App Name");
 	SetTargetFPS(60);
 
 	plug_init(&plug);
