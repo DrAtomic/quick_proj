@@ -86,4 +86,4 @@ popd
 
 echo ""
 echo "All Done now run"
-echo "source yosys_sdk"
+echo "source fpga_sdk"
