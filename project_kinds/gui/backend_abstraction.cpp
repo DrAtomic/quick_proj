@@ -1,35 +1,116 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <SDL.h>
-#include "imgui_impl_sdl2.h"
-#include "imgui_impl_sdlrenderer2.h"
+#include <stdbool.h>
+#include <time.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <dlfcn.h>
+
+#include <SDL3/SDL.h>
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_sdlrenderer3.h"
+
+#include "plug.h"
 
 static SDL_Window *window;
 static SDL_Renderer* renderer;
 static ImGuiIO io;
 
-static int init_sdl(void)
+static const char *lib_plug_name = "./lib_plug.so";
+static void *libplug;
+
+static plug_init_t plug_init;
+static plug_update_t plug_update;
+static plug_pre_reload_t plug_pre_reload;
+static plug_post_reload_t plug_post_reload;
+
+static void plug_reload(void)
 {
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
-		fprintf(stderr, "Error: %s\n", SDL_GetError());
-		return -1;
+	if (libplug)
+		dlclose(libplug);
+
+	for (int attempt = 0; attempt < 10; ++attempt) {
+		libplug = dlopen(lib_plug_name, RTLD_NOW | RTLD_GLOBAL);
+		if (libplug)
+			break;
+		usleep(100000);
 	}
 
-	SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-	window = SDL_CreateWindow("Dear ImGui SDL2+SDL_Renderer example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
-	if (window == nullptr) {
-		fprintf(stderr, "Error: SDL_CreateWindow(): %s\n", SDL_GetError());
-		return -1;
+	if (!libplug) {
+		fprintf(stderr, "dlopen: %s\n", dlerror());
+		exit(1);
 	}
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
-	if (renderer == nullptr) {
-		SDL_Log("Error creating SDL_Renderer!");
-		return -1;
+
+	plug_init = (plug_init_t)dlsym(libplug, "plug_init");
+	if (!plug_init) {
+		fprintf(stderr, "dlsym plug_init: %s\n", dlerror());
+		exit(1);
+	}
+
+	plug_update = (plug_update_t)dlsym(libplug, "plug_update");
+	if (!plug_update) {
+		fprintf(stderr, "dlsym plug_update: %s\n", dlerror());
+		exit(1);
+	}
+
+	plug_pre_reload = (plug_pre_reload_t)dlsym(libplug, "plug_pre_reload");
+	if (!plug_pre_reload) {
+		fprintf(stderr, "dlsym plug_pre_reload: %s\n", dlerror());
+		exit(1);
+	}
+
+	plug_post_reload = (plug_post_reload_t)dlsym(libplug, "plug_post_reload");
+	if (!plug_post_reload) {
+		fprintf(stderr, "dlsym plug_post_reload: %s\n", dlerror());
+		exit(1);
+	}
+	printf("reloading plug\n");
+}
+
+static int plug_should_reload(time_t *last_mtime)
+{
+	struct stat st;
+	if (stat(lib_plug_name, &st) != 0) {
+		fprintf(stderr, "stat(%s) failed: %s\n", lib_plug_name, strerror(errno));
+		exit(1);
+	}
+
+	if (st.st_mtime != *last_mtime) {
+		*last_mtime = st.st_mtime;
+		return 1;
 	}
 	return 0;
 }
 
-void backend_init(void)
+static int init_sdl(void)
+{
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+		printf("Error: SDL_Init(): %s\n", SDL_GetError());
+		return 1;
+	}
+
+	float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+	SDL_WindowFlags window_flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+	window = SDL_CreateWindow("Dear ImGui SDL3+SDL_Renderer example", (int)(1280 * main_scale), (int)(800 * main_scale), window_flags);
+	if (window == nullptr) {
+		fprintf(stderr, "Error: SDL_CreateWindow(): %s\n", SDL_GetError());
+		return -1;
+	}
+
+	renderer = SDL_CreateRenderer(window, nullptr);
+	SDL_SetRenderVSync(renderer, 1);
+	if (renderer == nullptr) {
+		SDL_Log("Error: SDL_CreateRenderer(): %s\n", SDL_GetError());
+		return 1;
+	}
+	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+	SDL_ShowWindow(window);
+	return 0;
+}
+
+static void backend_init(void)
 {
 	if (init_sdl()) {
 		exit(1);
@@ -37,51 +118,50 @@ void backend_init(void)
 	ImGui::CreateContext();
 	ImPlot::CreateContext();
 	ImGui::StyleColorsDark();
-	io = ImGui::GetIO(); (void)io;
+	io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-	ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
-	ImGui_ImplSDLRenderer2_Init(renderer);
+	ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
+	ImGui_ImplSDLRenderer3_Init(renderer);
 }
 
-void render(void)
+static void render(void)
 {
 	ImGui::Render();
-	SDL_RenderSetScale(renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
+	SDL_SetRenderScale(renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
 	SDL_SetRenderDrawColor(renderer, (Uint8)(0.45f * 255), (Uint8)(0.55f * 255), (Uint8)(0.60f * 255), (Uint8)(1.0f * 255));
 	SDL_RenderClear(renderer);
-	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+	ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
 	SDL_RenderPresent(renderer);
 }
 
-void backend_exit(void)
+static void backend_exit(void)
 {
-	ImGui_ImplSDLRenderer2_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
+	ImGui_ImplSDLRenderer3_Shutdown();
+	ImGui_ImplSDL3_Shutdown();
 	ImPlot::DestroyContext();
 	ImGui::DestroyContext();
 
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
-
 }
 
-void new_frame(void)
+static void new_frame(void)
 {
-	ImGui_ImplSDLRenderer2_NewFrame();
-	ImGui_ImplSDL2_NewFrame();
+	ImGui_ImplSDLRenderer3_NewFrame();
+	ImGui_ImplSDL3_NewFrame();
 	ImGui::NewFrame();
 }
 
-void check_for_exit(bool *done)
+static void check_for_exit(bool *done)
 {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-		ImGui_ImplSDL2_ProcessEvent(&event);
-		if (event.type == SDL_QUIT)
+		ImGui_ImplSDL3_ProcessEvent(&event);
+		if (event.type == SDL_EVENT_QUIT)
 			*done = true;
-		if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
+		if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(window))
 			*done = true;
 	}
 }
