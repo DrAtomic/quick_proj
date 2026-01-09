@@ -93,7 +93,7 @@ static int init_sdl(void)
 
 	float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
 	SDL_WindowFlags window_flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
-	window = SDL_CreateWindow("Dear ImGui SDL3+SDL_Renderer example", (int)(1280 * main_scale), (int)(800 * main_scale), window_flags);
+	window = SDL_CreateWindow("app_name", (int)(1280 * main_scale), (int)(800 * main_scale), window_flags);
 	if (window == nullptr) {
 		fprintf(stderr, "Error: SDL_CreateWindow(): %s\n", SDL_GetError());
 		return -1;

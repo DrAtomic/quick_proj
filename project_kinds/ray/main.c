@@ -84,7 +84,7 @@ int main(void)
 	plug_should_reload(&last_modified_time);
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_ALWAYS_RUN);
-	InitWindow(factor*16, factor*9, "App Name");
+	InitWindow(factor*16, factor*9, "app_name");
 	SetTargetFPS(60);
 
 	plug_init(&plug);
