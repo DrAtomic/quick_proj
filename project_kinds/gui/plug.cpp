@@ -1,7 +1,8 @@
-#include "plug.h"
+#include <stdio.h>
+
 #include "imgui.h"
 #include "implot.h"
-#include <stdio.h>
+#include "plug.h"
 
 extern "C" void plug_init(void)
 {
@@ -37,6 +38,7 @@ extern "C" void plug_update(void)
 
 	for (size_t i = 0; i < 20; i++)
 		buf[i] = i;
+
 	ImColor m_color = IM_COL32(255,0,255,100);
 	ImPlot::BeginPlot("hello plot", ImVec2(-1,0), ImPlotFlags_Equal);
 	ImPlot::SetNextLineStyle(m_color);

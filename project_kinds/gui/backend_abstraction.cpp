@@ -1,12 +1,12 @@
+#include <dlfcn.h>
+#include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <time.h>
-#include <errno.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/stat.h>
-#include <dlfcn.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <SDL3/SDL.h>
 #include "imgui_impl_sdl3.h"
@@ -31,7 +31,7 @@ static void plug_reload(void)
 	if (libplug)
 		dlclose(libplug);
 
-	for (int attempt = 0; attempt < 10; ++attempt) {
+	for (int attempt = 0; attempt < 10; attempt++) {
 		libplug = dlopen(lib_plug_name, RTLD_NOW | RTLD_GLOBAL);
 		if (libplug)
 			break;
@@ -84,11 +84,11 @@ static int plug_should_reload(time_t *last_mtime)
 	return 0;
 }
 
-static int init_sdl(void)
+static void init_sdl(void)
 {
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
-		printf("Error: SDL_Init(): %s\n", SDL_GetError());
-		return 1;
+		fprintf(stderr, "Error: SDL_Init(): %s\n", SDL_GetError());
+		exit(1);
 	}
 
 	float main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
@@ -96,25 +96,24 @@ static int init_sdl(void)
 	window = SDL_CreateWindow("app_name", (int)(1280 * main_scale), (int)(800 * main_scale), window_flags);
 	if (window == nullptr) {
 		fprintf(stderr, "Error: SDL_CreateWindow(): %s\n", SDL_GetError());
-		return -1;
+		exit(1);
 	}
 
 	renderer = SDL_CreateRenderer(window, nullptr);
 	SDL_SetRenderVSync(renderer, 1);
 	if (renderer == nullptr) {
-		SDL_Log("Error: SDL_CreateRenderer(): %s\n", SDL_GetError());
-		return 1;
+		fprintf(stderr, "Error: SDL_CreateRenderer(): %s\n", SDL_GetError());
+		exit(1);
 	}
+
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	SDL_ShowWindow(window);
-	return 0;
 }
 
 static void backend_init(void)
 {
-	if (init_sdl()) {
-		exit(1);
-	}
+	init_sdl();
+
 	ImGui::CreateContext();
 	ImPlot::CreateContext();
 	ImGui::StyleColorsDark();
