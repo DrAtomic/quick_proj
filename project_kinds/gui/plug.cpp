@@ -22,13 +22,13 @@ static void say_something(void)
 extern "C" void plug_update(void)
 {
 	ImGui::Begin("hello world!");
-	if (ImGui::Button("i am a button")) {
+	if (ImGui::Button("I am a button")) {
 		say_something();
 	}
 	ImGui::End();
 
 	ImGui::Begin("another button");
-	if (ImGui::Button("i am another button")) {
+	if (ImGui::Button("I am another button")) {
 		say_something(1);
 	}
 	ImGui::End();
@@ -39,10 +39,11 @@ extern "C" void plug_update(void)
 	for (size_t i = 0; i < 20; i++)
 		buf[i] = i;
 
-	ImColor m_color = IM_COL32(255,0,255,100);
 	ImPlot::BeginPlot("hello plot", ImVec2(-1,0), ImPlotFlags_Equal);
-	ImPlot::SetNextLineStyle(m_color);
-	ImPlot::PlotScatter("hello plot", buf, buf, 20);
+	ImColor m_color = IM_COL32(0,255,255,100);
+	ImPlotSpec spec;
+	spec.LineColor = m_color;
+	ImPlot::PlotScatter("hello plot", buf, buf, 20, spec);
 	ImPlot::EndPlot();
 	ImGui::End();
 }
