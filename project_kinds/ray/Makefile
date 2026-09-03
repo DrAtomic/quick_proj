@@ -1,4 +1,4 @@
-RAY_DIR = ./deps/raylib-5.0/src
+RAY_DIR = ./deps/raylib-6.0/src
 
 INCLUDE_PATHS = -I.
 INCLUDE_PATHS += -I$(RAY_DIR)
